@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Sistem Penilaian LT-1 SD Negeri Watutulis 2 Tahun 2026</title>
+  
+  <meta property="og:title" content="Penilaian LT-1 SDN Watutulis 2 Tahun 2026" />
+  <meta property="og:description" content="Aplikasi Penilaian & Papan Juara Lomba Tingkat 1 Pangkalan SD Negeri Watutulis 2" />
+  <meta property="og:type" content="website" />
+
+  <!-- Tailwind CSS & React 18 Standalone -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.2; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(1.08); }
+    }
+    .neon-bg-1 { animation: pulseGlow 8s infinite ease-in-out; }
+    .neon-bg-2 { animation: pulseGlow 10s infinite ease-in-out 2s; }
+    .neon-bg-3 { animation: pulseGlow 7s infinite ease-in-out 4s; }
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+    .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-[#07130e] text-amber-50 font-sans selection:bg-amber-500 selection:text-black">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // --- DATA MASTER PESERTA REGU ---
+    const INITIAL_TEAMS = [
+      // Regu Putra (PA) - Gudep 10.055
+      { id: 'pa-1', name: 'Phoenix', gender: 'PA', avatar: '🦅', borderColor: 'border-amber-500', pinru: 'Farel', members: ['Farel (Pinru)', 'Ziven', 'Afla', 'Arya', 'Wika', 'Rasya', 'Arfian', 'Aldi', 'Sulton'] },
+      { id: 'pa-2', name: 'Scorpio', gender: 'PA', avatar: '🦂', borderColor: 'border-red-500', pinru: 'Iqbal', members: ['Iqbal (Pinru)', 'Okta', 'Dodit', 'Rafala', 'Aruna', 'Bian', 'Nando', 'Liham', 'Eky'] },
+      { id: 'pa-3', name: 'Black Panther', gender: 'PA', avatar: '🐆', borderColor: 'border-emerald-500', pinru: 'Evan', members: ['Evan (Pinru)', 'Ravael', 'Latif', 'Dwik', 'Hafi', 'Abi', 'Gebril', 'Krisna', 'Sani'] },
+      { id: 'pa-4', name: 'Buaya', gender: 'PA', avatar: '🐊', borderColor: 'border-teal-500', pinru: 'Nino', members: ['Nino (Pinru)', 'Rehan', 'Zidny', 'Wildan', 'Dama', 'Hoho', 'Rizal', 'Adit', 'Rey', 'Gilang'] },
+      // Regu Putri (PI) - Gudep 10.056
+      { id: 'pi-1', name: 'Lotus', gender: 'PI', avatar: '🪷', borderColor: 'border-pink-400', pinru: 'Afifa', members: ['Afifa (Pinru)', 'Naura', 'Navya', 'Shidqia', 'Nadya', 'Farah', 'Kenia', 'Celin'] },
+      { id: 'pi-2', name: 'Lavender', gender: 'PI', avatar: '🪻', borderColor: 'border-purple-400', pinru: 'Nafla', members: ['Nafla (Pinru)', 'Cherly', 'Rara', 'Cinta', 'Nayla', 'Devni', 'Gendhis', 'Febri'] },
+      { id: 'pi-3', name: 'Peony', gender: 'PI', avatar: '🌺', borderColor: 'border-rose-400', pinru: 'Kirana', members: ['Kirana (Pinru)', 'Inara', 'Ara', 'Talita', 'Cantika', 'Gadis', 'Alya', 'Azalea'] },
+      { id: 'pi-4', name: 'Queen Violet', gender: 'PI', avatar: '👑', borderColor: 'border-violet-400', pinru: 'Kila', members: ['Kila (Pinru)', 'Alesa', 'Dinda', 'Sinta', 'Nacuwa', 'Deavika', 'Keisya', 'Nimas', 'Raisha'] }
+    ];
+
+    // --- DAFTAR CABANG LOMBA LENGKAP (11 CABANG SESUAI JUKNIS) ---
+    const CONTEST_CONFIG = [
+      { id: 'pbb', category: 'Kategori 1: PBB', categoryGroup: 'PBB', title: 'PBB Bertongkat', icon: '🎖️', peserta: '7 orang (1 Danton + 6 Pasukan)', waktu: 'Maks. 5 Menit', criteria: [{ key: 'kekompakan', label: 'Kekompakan', max: 40 }, { key: 'danton', label: 'Danton', max: 20 }, { key: 'ketepatan', label: 'Ketepatan Aba-aba', max: 40 }] },
+      { id: 'morse', category: 'Kategori 2: Tekspram', categoryGroup: 'TEKSPRAM', title: 'Morse', icon: '📡', peserta: '2 orang', waktu: '2 Menit (50 Huruf)', criteria: [{ key: 'score', label: 'Ketepatan (0-100)', max: 100 }] },
+      { id: 'sandi', category: 'Kategori 2: Tekspram', categoryGroup: 'TEKSPRAM', title: 'Sandi-Sandi', icon: '📜', peserta: '5 orang', waktu: '30 Menit (5 Soal)', criteria: [{ key: 'score', label: 'Ketepatan (0-100)', max: 100 }] },
+      { id: 'semaphore', category: 'Kategori 2: Tekspram', categoryGroup: 'TEKSPRAM', title: 'Semaphore', icon: '🚩', peserta: '2 orang', waktu: '2 Menit (50 Huruf)', criteria: [{ key: 'score', label: 'Ketepatan (0-100)', max: 100 }] },
+      { id: 'makanan', category: 'Kategori 3: Life Skill', categoryGroup: 'LIFESKILL', title: 'Menghias Makanan', icon: '🍰', peserta: '3 orang', waktu: '60 Menit (Desserts)', criteria: [{ key: 'tema', label: 'Kesesuaian Tema', max: 45 }, { key: 'rasa', label: 'Rasa', max: 25 }, { key: 'kreatifitas', label: 'Kreatifitas', max: 30 }] },
+      { id: 'minuman', category: 'Kategori 3: Life Skill', categoryGroup: 'LIFESKILL', title: 'Menghias Minuman', icon: '🍹', peserta: '3 orang', waktu: '60 Menit (Buah-buahan)', criteria: [{ key: 'tema', label: 'Kesesuaian Tema', max: 45 }, { key: 'rasa', label: 'Rasa', max: 25 }, { key: 'kreatifitas', label: 'Kreatifitas', max: 30 }] },
+      { id: 'meja', category: 'Kategori 3: Life Skill', categoryGroup: 'LIFESKILL', title: 'Menata Meja Makan', icon: '🍽️', peserta: '2 orang', waktu: '30 Menit (Pramuka/Merdeka)', criteria: [{ key: 'tema', label: 'Kesesuaian Tema', max: 45 }, { key: 'plating', label: 'Plating', max: 25 }, { key: 'kreatifitas', label: 'Kreatifitas', max: 30 }] },
+      { id: 'dance', category: 'Kategori 4: Seni Budaya', categoryGroup: 'SENI', title: 'Semaphore Dance', icon: '💃', peserta: '7 orang', waktu: 'Maks. 5 Menit ("PRAMUKA OPTIMIS")', criteria: [{ key: 'kreatifitas', label: 'Kreatifitas', max: 30 }, { key: 'kekompakan', label: 'Kekompakan', max: 30 }, { key: 'isiPentas', label: 'Isi Pentas', max: 40 }] },
+      { id: 'ketangkasan_sentil', category: 'Kategori 5: Ketangkasan', categoryGroup: 'KETANGKASAN', title: 'Ketangkasan 1: Sentil Karet', icon: '🎯', peserta: '1 orang', waktu: 'Sabtu Pagi (07.00 - 08.00)', criteria: [{ key: 'score', label: 'Akurasi & Keberhasilan (0-100)', max: 100 }] },
+      { id: 'ketangkasan_pingpong', category: 'Kategori 5: Ketangkasan', categoryGroup: 'KETANGKASAN', title: 'Ketangkasan 2: Estafet Pingpong', icon: '🏓', peserta: '3 orang', waktu: 'Sabtu Pagi (07.00 - 08.00)', criteria: [{ key: 'score', label: 'Kekompakan & Keberhasilan (0-100)', max: 100 }] },
+      { id: 'ketangkasan_tikus', category: 'Kategori 5: Ketangkasan', categoryGroup: 'KETANGKASAN', title: 'Ketangkasan 3: Jebakan Tikus', icon: '🪤', peserta: '5 orang', waktu: 'Sabtu Pagi (07.00 - 08.00)', criteria: [{ key: 'score', label: 'Strategi & Keberhasilan (0-100)', max: 100 }] }
+    ];
+
+    // --- RUNDOWN KEGIATAN LT-1 RESMI ---
+    const RUNDOWN_SCHEDULE = [
+      {
+        dayId: 'day1',
+        dayTitle: 'Jumat, 28 Agustus 2026',
+        dayNumber: 5,
+        events: [
+          { start: '12:30', end: '13:00', title: 'Registrasi Peserta', icon: '📝', desc: 'Pengecekan kelengkapan peserta dan administrasi kavling tenda.' },
+          { start: '13:00', end: '14:00', title: 'Upacara Pembukaan LT-1', icon: '⚜️', desc: 'Penyematan tanda peserta oleh Mabigus SDN Watutulis 2.' },
+          { start: '14:00', end: '14:30', title: 'PBB Bertongkat (7 orang)', icon: '🎖️', desc: '1 Danton + 6 Pasukan bersaf. Waktu maksimal 5 menit.' },
+          { start: '14:30', end: '15:00', title: 'Tekspram (Semaphore, Morse, Sandi)', icon: '📡', desc: 'Semaphore (2 org), Morse (2 org), Sandi-Sandi (3 org).' },
+          { start: '15:00', end: '15:30', title: 'Istirahat & Sholat Ashar', icon: '🕌', desc: 'Ibadah sholat Ashar berjamaah di Buper.' },
+          { start: '15:30', end: '17:00', title: 'Life Skill (Makanan, Minuman, Meja)', icon: '🍰', desc: 'Menghias Makanan (3 org), Minuman (3 org), Menata Meja (2 org).' },
+          { start: '17:00', end: '19:00', title: 'ISHOMA', icon: '🍱', desc: 'Istirahat, Sholat Maghrib & Isya, makan malam bersama.' },
+          { start: '19:00', end: '20:00', title: '🔥 Upacara Api Unggun', icon: '🔥', desc: 'Penyalaan Api Dasa Darma dan malam renungan pramuka.' },
+          { start: '20:00', end: '22:30', title: '💃 Dance Semaphore (7 orang)', icon: '💃', desc: 'Pentas seni Semaphore Dance bertema "PRAMUKA OPTIMIS".' },
+          { start: '22:30', end: '24:00', title: 'Melukis Langit & Refleksi Malam', icon: '✨', desc: 'Malam tenang dan persiapan istirahat regu.' }
+        ]
+      },
+      {
+        dayId: 'day2',
+        dayTitle: 'Sabtu, 29 Agustus 2026',
+        dayNumber: 6,
+        events: [
+          { start: '00:00', end: '04:00', title: 'Istirahat Malam / Tidur Lelap', icon: '⛺', desc: 'Istirahat total menjaga stamina tubuh.' },
+          { start: '04:00', end: '05:00', title: 'Sholat Subuh & Giat Pribadi', icon: '🕌', desc: 'Sholat Subuh berjamaah dan kebersihan diri.' },
+          { start: '05:00', end: '07:00', title: 'Senam Pagi & Sarapan', icon: '🏃‍♂️', desc: 'Senam Pramuka bersama dan makan pagi regu.' },
+          { start: '07:00', end: '08:00', title: '⚡ Ketangkasan 1 (1), 2 (3), 3 (5)', icon: '⚡', desc: 'Sentil Karet (1 org), Estafet Pingpong (3 org), Jebakan Tikus (5 org).' },
+          { start: '08:00', end: '09:00', title: 'Makan & Bersiap / Bongkar Tenda', icon: '🏕️', desc: 'Operasi semut kebersihan kavling dan persiapan penutupan.' },
+          { start: '10:00', end: '12:00', title: '🏆 Upacara Penutupan & Pengumuman Juara', icon: '🏅', desc: 'Penetapan Regu Berprestasi Tinggi, Baik, Cukup LT-1 2026.' }
+        ]
+      }
+    ];
+
+    function App() {
+      const [isAdmin, setIsAdmin] = useState(false);
+      const [passwordInput, setPasswordInput] = useState('');
+      const [showLoginModal, setShowLoginModal] = useState(false);
+      const [showShareModal, setShowShareModal] = useState(false);
+      const [showConfigModal, setShowConfigModal] = useState(false);
+      const [errorMsg, setErrorMsg] = useState('');
+      const [activeTab, setActiveTab] = useState('leaderboard');
+      const [selectedGender, setSelectedGender] = useState('ALL');
+      const [selectedContestId, setSelectedContestId] = useState(CONTEST_CONFIG[0].id);
+      const [searchMember, setSearchMember] = useState('');
+
+      // Nilai Default Kosong
+      const [scores, setScores] = useState(() => {
+        try {
+          const saved = localStorage.getItem('LT1_SCORES_2026');
+          return saved ? JSON.parse(saved) : {};
+        } catch(e) {
+          return {};
+        }
+      });
+
+      const [sheetWebhookUrl, setSheetWebhookUrl] = useState(() => {
+        return localStorage.getItem('LT1_SHEET_WEBHOOK') || '';
+      });
+
+      const [currentTime, setCurrentTime] = useState(new Date());
+      const [isSaving, setIsSaving] = useState(false);
+      const [toastMsg, setToastMsg] = useState(null);
+
+      const showToast = (msg) => {
+        setToastMsg(msg);
+        setTimeout(() => setToastMsg(null), 3200);
+      };
+
+      // Timer Detik Jam Digital
+      useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+      }, []);
+
+      // Simpan perubahan nilai ke LocalStorage
+      useEffect(() => {
+        try {
+          localStorage.setItem('LT1_SCORES_2026', JSON.stringify(scores));
+        } catch(e) {}
+      }, [scores]);
+
+      // Sinkronisasi Hari & Agenda Berdasarkan Waktu
+      const currentScheduleStatus = useMemo(() => {
+        const now = currentTime;
+        const dayOfWeek = now.getDay(); // 5 = Jumat, 6 = Sabtu
+        const activeDaySchedule = (dayOfWeek === 6) ? RUNDOWN_SCHEDULE[1] : RUNDOWN_SCHEDULE[0];
+
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        let activeEvent = null;
+        let nextEvent = null;
+
+        for (let i = 0; i < activeDaySchedule.events.length; i++) {
+          const ev = activeDaySchedule.events[i];
+          const [sh, sm] = ev.start.split(':').map(Number);
+          const [eh, em] = ev.end.split(':').map(Number);
+          const startMin = sh * 60 + sm;
+          const endMin = eh * 60 + em;
+
+          if (nowMinutes >= startMin && nowMinutes < endMin) {
+            activeEvent = ev;
+            nextEvent = activeDaySchedule.events[i + 1] || null;
+            break;
+          }
+        }
+
+        if (!activeEvent) {
+          for (let i = 0; i < activeDaySchedule.events.length; i++) {
+            const ev = activeDaySchedule.events[i];
+            const [sh, sm] = ev.start.split(':').map(Number);
+            const startMin = sh * 60 + sm;
+            if (nowMinutes < startMin) {
+              nextEvent = ev;
+              break;
+            }
+          }
+        }
+
+        return {
+          activeDayTitle: activeDaySchedule.dayTitle,
+          activeEvent,
+          nextEvent,
+          nowMinutes
+        };
+      }, [currentTime]);
+
+      // Login Admin Juri
+      const handleLogin = (e) => {
+        if (e) e.preventDefault();
+        const clean = passwordInput.trim().toUpperCase();
+        if (clean === 'SEKOLAHFAVORIT') {
+          setIsAdmin(true);
+          setShowLoginModal(false);
+          setPasswordInput('');
+          setErrorMsg('');
+          showToast('🔓 Akses Dewan Juri Terbuka');
+        } else {
+          setErrorMsg('Kata sandi salah. Silakan coba lagi.');
+        }
+      };
+
+      const handleLogout = () => {
+        setIsAdmin(false);
+        setPasswordInput('');
+        showToast('🔒 Panel Juri Dikunci');
+      };
+
+      // Hitung Total Nilai Per Lomba
+      const calculateTotal = (contestId, teamId) => {
+        const raw = scores[`${contestId}_${teamId}`];
+        if (!raw) return 0;
+        const cfg = CONTEST_CONFIG.find(c => c.id === contestId);
+        if (!cfg) return 0;
+        let tot = 0;
+        let hasVal = false;
+        cfg.criteria.forEach(cr => {
+          if (raw[cr.key] !== undefined && raw[cr.key] !== '') {
+            hasVal = true;
+            tot += parseFloat(raw[cr.key]) || 0;
+          }
+        });
+        return hasVal ? parseFloat(tot.toFixed(1)) : 0;
+      };
+
+      // Cek Keberadaan Nilai Masuk
+      const hasAnyScore = useMemo(() => {
+        return Object.values(scores).some(entry => {
+          if (!entry) return false;
+          return Object.values(entry).some(val => val !== '' && val !== null && !isNaN(val) && Number(val) > 0);
+        });
+      }, [scores]);
+
+      // Kalkulasi Medali Tiap Lomba (Per Gender)
+      const contestRankings = useMemo(() => {
+        const res = {};
+        CONTEST_CONFIG.forEach(c => {
+          ['PA', 'PI'].forEach(g => {
+            const list = INITIAL_TEAMS.filter(t => t.gender === g)
+              .map(t => ({ team: t, score: calculateTotal(c.id, t.id) }))
+              .sort((a, b) => b.score - a.score);
+
+            list.forEach((item, idx) => {
+              let medal = null;
+              if (item.score > 0) {
+                if (idx === 0) medal = 'GOLD';
+                else if (idx === 1) medal = 'SILVER';
+                else if (idx === 2) medal = 'BRONZE';
+              }
+              res[`${c.id}_${item.team.id}`] = {
+                rank: idx + 1,
+                medal: medal,
+                score: item.score
+              };
+            });
+          });
+        });
+        return res;
+      }, [scores]);
+
+      // Klasemen Regu Berprestasi (Juknis Bab IV)[cite: 1]
+      const overallStandings = useMemo(() => {
+        return ['PA', 'PI'].reduce((acc, g) => {
+          const list = INITIAL_TEAMS.filter(t => t.gender === g).map(team => {
+            let gold = 0, silver = 0, bronze = 0, total = 0, tekspramGold = 0, lifeSkillGold = 0;
+            CONTEST_CONFIG.forEach(c => {
+              const rankInfo = contestRankings[`${c.id}_${team.id}`];
+              const sc = rankInfo ? rankInfo.score : 0;
+              total += sc;
+              if (rankInfo?.medal === 'GOLD') {
+                gold++;
+                if (c.categoryGroup === 'TEKSPRAM') tekspramGold++;
+                if (c.categoryGroup === 'LIFESKILL') lifeSkillGold++;
+              } else if (rankInfo?.medal === 'SILVER') silver++;
+              else if (rankInfo?.medal === 'BRONZE') bronze++;
+            });
+            return {
+              team,
+              gold,
+              silver,
+              bronze,
+              tekspramGold,
+              lifeSkillGold,
+              totalOverallScore: parseFloat(total.toFixed(1))
+            };
+          });
+
+          // Tie-Breaker: Emas -> Perak -> Perunggu -> Emas Tekspram -> Emas LifeSkill -> Total Skor[cite: 1]
+          list.sort((a, b) => {
+            if (b.gold !== a.gold) return b.gold - a.gold;
+            if (b.silver !== a.silver) return b.silver - a.silver;
+            if (b.bronze !== a.bronze) return b.bronze - a.bronze;
+            if (b.tekspramGold !== a.tekspramGold) return b.tekspramGold - a.tekspramGold;
+            if (b.lifeSkillGold !== a.lifeSkillGold) return b.lifeSkillGold - a.lifeSkillGold;
+            return b.totalOverallScore - a.totalOverallScore;
+          });
+
+          acc[g] = list.map((item, idx) => ({
+            ...item,
+            rank: idx + 1,
+            title: (item.totalOverallScore === 0)
+              ? 'Menunggu Penilaian Juri'
+              : (idx === 0 ? 'Regu Berprestasi Tinggi (Juara 1)' : idx === 1 ? 'Regu Berprestasi Baik (Juara 2)' : idx === 2 ? 'Regu Berprestasi Cukup (Juara 3)' : 'Regu Penggalang Berbakat')
+          }));
+          return acc;
+        }, {});
+      }, [contestRankings]);
+
+      // Input Nilai
+      const handleScoreInputChange = (contestId, teamId, critKey, value, maxVal) => {
+        let val = value === '' ? '' : Math.max(0, Math.min(maxVal, parseFloat(value) || 0));
+        setScores(prev => ({
+          ...prev,
+          [`${contestId}_${teamId}`]: {
+            ...(prev[`${contestId}_${teamId}`] || {}),
+            [critKey]: val
+          }
+        }));
+      };
+
+      // Simpan Nilai ke Webhook Google Sheets
+      const handleSaveScores = async () => {
+        setIsSaving(true);
+        if (sheetWebhookUrl && sheetWebhookUrl.startsWith('http')) {
+          try {
+            await fetch(sheetWebhookUrl, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                timestamp: new Date().toISOString(),
+                scores: scores,
+                overallStandings: overallStandings
+              })
+            });
+            showToast('✅ Nilai disinkronkan ke Google Sheet Webhook!');
+          } catch(err) {
+            showToast('⚠️ Gagal terhubung ke Webhook. Tersimpan di memori browser.');
+          }
+        } else {
+          showToast('💾 Nilai berhasil disimpan di memori browser!');
+        }
+        setIsSaving(false);
+      };
+
+      // Unduh Rekap CSV
+      const handleDownloadExcelCSV = () => {
+        let csv = 'KATEGORI,PERINGKAT,NAMA REGU,PINRU,EMAS,PERAK,PERUNGGU,TOTAL SKOR,STATUS PRESTASI\n';
+        ['PA', 'PI'].forEach(g => {
+          overallStandings[g].forEach(r => {
+            csv += `"${g === 'PA' ? 'Putra' : 'Putri'}","${r.rank}","Regu ${r.team.name}","${r.team.pinru}","${r.gold}","${r.silver}","${r.bronze}","${r.totalOverallScore}","${r.title}"\n`;
+          });
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Rekap_Nilai_LT1_Watutulis2_2026.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('📥 Berkas CSV berhasil diunduh!');
+      };
+
+      // Salin Tautan
+      const handleCopyShare = () => {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+          showToast('📋 Link berhasil disalin ke clipboard!');
+        });
+      };
+
+      return (
+        <div className="min-h-screen relative overflow-hidden pb-12">
+          {/* Background Ambient Glow */}
+          <div className="fixed inset-0 pointer-events-none z-0">
+            <div className="absolute -top-32 -left-32 w-96 h-96 bg-amber-600/15 rounded-full blur-[120px] neon-bg-1"></div>
+            <div className="absolute top-1/3 -right-32 w-[28rem] h-[28rem] bg-emerald-600/15 rounded-full blur-[140px] neon-bg-2"></div>
+            <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-purple-600/15 rounded-full blur-[130px] neon-bg-3"></div>
+            <div className="absolute inset-0 bg-[radial-gradient(#143324_1px,transparent_1px)] [background-size:24px_24px] opacity-40"></div>
+          </div>
+
+          {/* Header Utama */}
+          <header className="relative z-20 border-b border-amber-900/60 bg-gradient-to-r from-emerald-950/95 via-[#0b1b13]/95 to-amber-950/95 backdrop-blur-md shadow-2xl sticky top-0">
+            <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-3 text-center md:text-left">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-600 to-emerald-700 p-0.5 shadow-lg shadow-amber-500/25 flex-shrink-0 animate-pulse">
+                  <div className="w-full h-full bg-[#081510] rounded-[14px] flex items-center justify-center text-2xl">
+                    ⚜️
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 justify-center md:justify-start flex-wrap">
+                    <span className="px-2 py-0.5 text-[10px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-md">
+                      LT-1 2026
+                    </span>
+                    <span className="text-xs text-emerald-400 font-semibold">Gudep 10.055 – 10.056[cite: 1]</span>
+                  </div>
+                  <h1 className="text-base sm:text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-400">
+                    SD NEGERI WATUTULIS 2
+                  </h1>
+                </div>
+              </div>
+
+              {/* Jam Digital Realtime & Tombol Aksi */}
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                <div className="flex items-center gap-2 bg-[#040c08] border border-amber-500/50 px-3 py-1 rounded-xl shadow-inner text-amber-300 font-mono text-xs sm:text-sm font-bold">
+                  <span>⏱️</span>
+                  <span>{currentTime.toLocaleTimeString('id-ID')} WIB</span>
+                </div>
+
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#092218] hover:bg-[#0f3325] text-emerald-200 border border-emerald-600/50 rounded-xl text-xs font-bold transition shadow-sm"
+                >
+                  <span>📲 Bagikan</span>
+                </button>
+
+                <button
+                  onClick={() => setShowConfigModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0a271a] hover:bg-[#123d29] text-amber-300 border border-amber-600/50 rounded-xl text-xs font-bold transition shadow-sm"
+                >
+                  <span>💾 Backup / CSV</span>
+                </button>
+
+                {isAdmin ? (
+                  <div className="flex items-center gap-1.5 bg-emerald-950/90 border border-emerald-500/60 px-2.5 py-1 rounded-xl shadow-md">
+                    <span className="text-[11px] font-black text-emerald-300">🔓 JURI AKTIF</span>
+                    <button
+                      onClick={handleLogout}
+                      className="text-[10px] bg-red-950 hover:bg-red-900 text-red-300 border border-red-800 px-2 py-0.5 rounded-lg transition font-bold"
+                    >
+                      Kunci
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 text-black font-black rounded-xl text-xs shadow-md transition transform active:scale-95"
+                  >
+                    <span>🔒 Masuk Juri</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Menu Navigasi Tab */}
+            <div className="border-t border-emerald-900/40 bg-black/40 px-4">
+              <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-1.5 scrollbar-none">
+                {[
+                  { id: 'leaderboard', label: '🏆 Papan Juara & Medali' },
+                  { id: 'input', label: '✍️ Input Nilai Juri', isProtected: true },
+                  { id: 'rekap', label: '📊 Rekap Nilai Lomba' },
+                  { id: 'teams', label: '👥 Regu & Peserta' },
+                  { id: 'juknis', label: '📖 Rundown & Juknis' },
+                  { id: 'print', label: '🖨️ Cetak Berita Acara' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${
+                      activeTab === tab.id
+                        ? 'bg-amber-500 text-black shadow-md'
+                        : 'text-emerald-300 hover:bg-emerald-950/60 hover:text-white'
+                    }`}
+                  >
+                    {tab.label} {tab.isProtected && !isAdmin && '🔒'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </header>
+
+          {/* Toast Notification */}
+          {toastMsg && (
+            <div className="fixed bottom-6 right-6 z-50 bg-emerald-950 border border-emerald-500 text-emerald-200 px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold animate-bounce">
+              {toastMsg}
+            </div>
+          )}
+
+          {/* MODAL 1: LOGIN JURI */}
+          {showLoginModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+              <div className="bg-gradient-to-b from-[#10241b] to-[#07130e] border border-amber-500/60 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-black text-amber-300">Autentikasi Dewan Juri</h3>
+                  <button onClick={() => { setShowLoginModal(false); setErrorMsg(''); }} className="text-emerald-400 hover:text-white">✕</button>
+                </div>
+                <p className="text-xs text-emerald-300/80">Masukkan kata sandi juri untuk membuka akses penilaian.</p>
+
+                <form onSubmit={handleLogin} className="space-y-3">
+                  <input
+                    type="password"
+                    placeholder="Masukkan Kata Sandi..."
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#050e0a] border border-emerald-700 rounded-xl text-amber-200 text-sm focus:outline-none focus:border-amber-400 text-center font-mono"
+                    autoFocus
+                  />
+                  {errorMsg && <p className="text-xs text-red-400 font-bold text-center">⚠️ {errorMsg}</p>}
+                  <button type="submit" className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-black font-black rounded-xl text-xs uppercase tracking-wider">
+                    Buka Akses Juri
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL 2: BAGIKAN LINK */}
+          {showShareModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+              <div className="bg-gradient-to-b from-[#10241b] to-[#07130e] border border-amber-500/50 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 text-center">
+                <button onClick={() => setShowShareModal(false)} className="absolute top-4 right-4 text-emerald-400 hover:text-white">✕</button>
+                <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/20 flex items-center justify-center text-2xl">📲</div>
+                <h3 className="text-base font-black text-amber-300">Bagikan Tautan Live Penilaian</h3>
+                <p className="text-xs text-emerald-300/80">Aplikasi dapat dibuka di seluruh browser HP/Laptop peserta dan pembina.</p>
+
+                <a
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent('🔥 Saksikan Live Penilaian & Papan Juara LT-1 SDN Watutulis 2 Tahun 2026: ' + window.location.href)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs"
+                >
+                  <span>💬 Bagikan ke Grup WhatsApp</span>
+                </a>
+
+                <div className="flex items-center gap-2 bg-[#050e0a] border border-emerald-800 p-2 rounded-xl text-xs">
+                  <input type="text" readOnly value={window.location.href} className="w-full bg-transparent text-emerald-300 font-mono focus:outline-none truncate" />
+                  <button onClick={handleCopyShare} className="px-3 py-1 bg-amber-500 text-black font-bold rounded-lg text-xs whitespace-nowrap">
+                    Salin
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL 3: CADANGAN DATA & WEBHOOK */}
+          {showConfigModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+              <div className="bg-gradient-to-b from-[#10241b] to-[#07130e] border border-emerald-500/50 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-black text-amber-300">Cadangan Data & Ekspor</h3>
+                  <button onClick={() => setShowConfigModal(false)} className="text-emerald-400 hover:text-white">✕</button>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-emerald-400 block">URL Google Apps Script Webhook (Opsional):</label>
+                  <input
+                    type="text"
+                    value={sheetWebhookUrl}
+                    onChange={e => {
+                      setSheetWebhookUrl(e.target.value);
+                      localStorage.setItem('LT1_SHEET_WEBHOOK', e.target.value);
+                    }}
+                    placeholder="https://script.google.com/macros/s/.../exec"
+                    className="w-full px-2.5 py-1.5 bg-[#050e0a] border border-emerald-700 rounded-xl text-xs font-mono text-emerald-200 focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <button onClick={handleDownloadExcelCSV} className="p-2.5 bg-[#0a2015] hover:bg-[#103020] border border-emerald-700/60 rounded-xl text-xs font-bold text-center">
+                    📊 Unduh Excel/CSV
+                  </button>
+                  <button
+                    onClick={() => {
+                      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(scores, null, 2));
+                      const a = document.createElement('a');
+                      a.href = dataStr;
+                      a.download = 'Backup_LT1_2026.json';
+                      a.click();
+                      showToast('💾 File JSON berhasil diunduh!');
+                    }}
+                    className="p-2.5 bg-[#17200a] hover:bg-[#233010] border border-amber-700/60 rounded-xl text-xs font-bold text-center text-amber-300"
+                  >
+                    💾 Simpan Backup JSON
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MAIN CONTAINER */}
+          <main className="relative z-10 max-w-7xl mx-auto px-4 py-5 space-y-5">
+            
+            {/* BANNER REALTIME JADWAL RUNDOWN */}
+            <div className="bg-gradient-to-r from-[#0d261a] via-[#103020] to-[#1a2614] border border-amber-500/40 p-4 rounded-2xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5 text-center md:text-left">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-2xl flex-shrink-0">
+                  🗓️
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 justify-center md:justify-start">
+                    <span className="text-[10px] bg-red-950 text-red-300 border border-red-700 px-2 py-0.5 rounded-full font-bold animate-pulse">
+                      STATUS ACARA
+                    </span>
+                    <span className="text-xs text-emerald-400 font-semibold">{currentScheduleStatus.activeDayTitle}</span>
+                  </div>
+                  <h2 className="text-sm sm:text-base font-black text-amber-300 mt-0.5">
+                    {currentScheduleStatus.activeEvent ? `Kegiatan: ${currentScheduleStatus.activeEvent.title}` : 'Persiapan & Pengkondisian Buper SDN Watutulis 2'}
+                  </h2>
+                  <p className="text-[11px] text-emerald-300/80">
+                    {currentScheduleStatus.activeEvent ? `${currentScheduleStatus.activeEvent.start} - ${currentScheduleStatus.activeEvent.end} WIB • ${currentScheduleStatus.activeEvent.desc}` : 'Menjelang rangkaian kegiatan LT-1.'}
+                  </p>
+                </div>
+              </div>
+
+              {currentScheduleStatus.nextEvent && (
+                <div className="bg-[#050e0a] border border-emerald-800 p-2.5 rounded-xl text-xs text-right">
+                  <span className="text-[10px] text-emerald-400 font-bold uppercase block">Agenda Berikutnya:</span>
+                  <p className="font-bold text-amber-300">{currentScheduleStatus.nextEvent.icon} {currentScheduleStatus.nextEvent.title}</p>
+                  <span className="text-[10px] font-mono text-emerald-400">{currentScheduleStatus.nextEvent.start} WIB</span>
+                </div>
+              )}
+            </div>
+
+            {/* ================= TAB 1: KLASEMEN ================= */}
+            {activeTab === 'leaderboard' && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="flex justify-between items-center bg-[#091711] p-3 rounded-xl border border-emerald-800">
+                  <span className="text-xs text-emerald-300 font-bold">
+                    {hasAnyScore ? '🟢 Klasemen Resmi Terverifikasi' : 'ℹ️ Status: Belum Ada Nilai Diinput (Menunggu Penjurian)'}
+                  </span>
+                  <div className="flex gap-1">
+                    {[{ id: 'ALL', label: 'Semua' }, { id: 'PA', label: 'Putra' }, { id: 'PI', label: 'Putri' }].map(b => (
+                      <button
+                        key={b.id}
+                        onClick={() => setSelectedGender(b.id)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold ${selectedGender === b.id ? 'bg-amber-500 text-black' : 'bg-[#050e0a] text-emerald-400'}`}
+                      >
+                        {b.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Klasemen Putra */}
+                {(selectedGender === 'ALL' || selectedGender === 'PA') && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-black text-blue-400 flex items-center gap-2">
+                      <span>🏕️</span> Klasemen Regu Penggalang Putra (PA)
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {overallStandings.PA.map((item, idx) => (
+                        <div key={item.team.id} className="bg-[#0b1d15] border border-emerald-900 p-4 rounded-2xl space-y-2">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-emerald-400 font-bold">Regu #{idx + 1}</span>
+                            <span className="font-mono text-amber-300 font-black">{item.totalOverallScore} Poin</span>
+                          </div>
+                          <h4 className="text-base font-black text-white">{item.team.avatar} Regu {item.team.name}</h4>
+                          <p className="text-xs text-emerald-300/80">Pinru: {item.team.pinru}</p>
+                          <div className="flex justify-between text-xs bg-black/40 p-2 rounded-xl border border-emerald-950 font-mono text-amber-300">
+                            <span>🥇 {item.gold}</span>
+                            <span>🥈 {item.silver}</span>
+                            <span>🥉 {item.bronze}</span>
+                          </div>
+                          <p className="text-[10px] text-emerald-400/90 font-semibold">{item.title}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Klasemen Putri */}
+                {(selectedGender === 'ALL' || selectedGender === 'PI') && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-black text-pink-400 flex items-center gap-2">
+                      <span>🌸</span> Klasemen Regu Penggalang Putri (PI)
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {overallStandings.PI.map((item, idx) => (
+                        <div key={item.team.id} className="bg-[#140b17] border border-purple-950 p-4 rounded-2xl space-y-2">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-pink-400 font-bold">Regu #{idx + 1}</span>
+                            <span className="font-mono text-amber-300 font-black">{item.totalOverallScore} Poin</span>
+                          </div>
+                          <h4 className="text-base font-black text-white">{item.team.avatar} Regu {item.team.name}</h4>
+                          <p className="text-xs text-pink-300/80">Pinru: {item.team.pinru}</p>
+                          <div className="flex justify-between text-xs bg-black/40 p-2 rounded-xl border border-purple-950 font-mono text-amber-300">
+                            <span>🥇 {item.gold}</span>
+                            <span>🥈 {item.silver}</span>
+                            <span>🥉 {item.bronze}</span>
+                          </div>
+                          <p className="text-[10px] text-pink-400/90 font-semibold">{item.title}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ================= TAB 2: INPUT JURI ================= */}
+            {activeTab === 'input' && (
+              <div className="space-y-4 animate-fadeIn">
+                {!isAdmin ? (
+                  <div className="text-center p-8 bg-[#091711] rounded-2xl border border-amber-500/40 space-y-3 max-w-md mx-auto my-8">
+                    <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/20 flex items-center justify-center text-2xl">🔒</div>
+                    <h3 className="text-base font-bold text-amber-300">Panel Dewan Juri Terkunci</h3>
+                    <p className="text-xs text-emerald-300/80">Masukkan kata sandi juri untuk membuka formulir penilaian 11 cabang lomba.</p>
+                    <button onClick={() => setShowLoginModal(true)} className="px-4 py-2 bg-amber-500 text-black font-black rounded-xl text-xs">
+                      Buka Akses Juri
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-2 bg-[#091711] p-3 rounded-xl border border-emerald-800">
+                      <div>
+                        <h3 className="text-xs font-bold text-amber-300">Panel Dewan Juri Aktif</h3>
+                        <p className="text-[10px] text-emerald-400">Pilih cabang lomba di bawah dan input nilai sesuai rubrik.</p>
+                      </div>
+                      <button
+                        onClick={handleSaveScores}
+                        disabled={isSaving}
+                        className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg"
+                      >
+                        {isSaving ? 'Menyimpan...' : '💾 Simpan Penilaian'}
+                      </button>
+                    </div>
+
+                    {/* Selector 11 Cabang Lomba */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+                      {CONTEST_CONFIG.map(c => (
+                        <button
+                          key={c.id}
+                          onClick={() => setSelectedContestId(c.id)}
+                          className={`p-2 rounded-xl border text-center transition flex flex-col items-center justify-center gap-1 ${
+                            selectedContestId === c.id
+                              ? 'bg-amber-500/20 border-amber-400 text-amber-200'
+                              : 'bg-[#050e0a] border-emerald-900 text-emerald-400 hover:bg-emerald-950'
+                          }`}
+                        >
+                          <span className="text-xl">{c.icon}</span>
+                          <span className="text-[10px] font-bold truncate w-full">{c.title}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Formulir Nilai Lomba Terpilih */}
+                    {(() => {
+                      const cur = CONTEST_CONFIG.find(c => c.id === selectedContestId);
+                      if (!cur) return null;
+                      return (
+                        <div className="bg-[#091711] border border-amber-500/40 p-4 rounded-2xl space-y-4">
+                          <div className="flex justify-between items-center border-b border-emerald-800 pb-2">
+                            <div>
+                              <span className="text-[10px] font-bold text-amber-400">{cur.category}</span>
+                              <h4 className="text-sm font-black text-white">{cur.icon} {cur.title}</h4>
+                            </div>
+                            <div className="flex gap-2 text-[10px] text-emerald-300">
+                              <span>Peserta: {cur.peserta}</span>
+                              <span>• Waktu: {cur.waktu}</span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {INITIAL_TEAMS.map(team => {
+                              const total = calculateTotal(cur.id, team.id);
+                              return (
+                                <div key={team.id} className="bg-[#050e0a] border border-emerald-900 p-3 rounded-xl space-y-2">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-xs font-bold text-white">{team.avatar} Regu {team.name} ({team.gender})</span>
+                                    <span className="font-mono text-amber-400 font-bold text-xs">Total: {total}</span>
+                                  </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                    {cur.criteria.map(crit => (
+                                      <div key={crit.key} className="bg-[#091f15] p-1.5 rounded border border-emerald-950">
+                                        <div className="flex justify-between text-[9px] text-emerald-400 mb-0.5">
+                                          <span>{crit.label}</span>
+                                          <span>Max {crit.max}</span>
+                                        </div>
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          max={crit.max}
+                                          placeholder="0"
+                                          value={scores[`${cur.id}_${team.id}`]?.[crit.key] !== undefined ? scores[`${cur.id}_${team.id}`][crit.key] : ''}
+                                          onChange={e => handleScoreInputChange(cur.id, team.id, crit.key, e.target.value, crit.max)}
+                                          className="w-full bg-[#050e0a] border border-emerald-800 text-amber-300 text-center font-bold font-mono text-xs py-1 rounded focus:outline-none focus:border-amber-400"
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ================= TAB 3: REKAP NILAI ================= */}
+            {activeTab === 'rekap' && (
+              <div className="space-y-4 animate-fadeIn">
+                <div className="bg-[#091711] border border-emerald-800 p-4 rounded-2xl overflow-x-auto">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-xs font-bold text-amber-300 uppercase">Rekapitulasi 11 Cabang Lomba</h3>
+                    <button onClick={handleDownloadExcelCSV} className="text-xs text-emerald-400 hover:text-amber-300 underline font-semibold">
+                      Unduh Berkas Excel/CSV ↗
+                    </button>
+                  </div>
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="bg-[#050e0a] text-emerald-400 font-bold border-b border-emerald-900 text-[10px]">
+                        <th className="p-2">Regu</th>
+                        {CONTEST_CONFIG.map(c => (
+                          <th key={c.id} className="p-2 text-center whitespace-nowrap">{c.title}</th>
+                        ))}
+                        <th className="p-2 text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-emerald-900/40">
+                      {INITIAL_TEAMS.map(team => (
+                        <tr key={team.id} className="hover:bg-emerald-950/40">
+                          <td className="p-2 font-bold text-white whitespace-nowrap">{team.avatar} {team.name} ({team.gender})</td>
+                          {CONTEST_CONFIG.map(c => (
+                            <td key={c.id} className="p-2 text-center font-mono text-amber-300">
+                              {calculateTotal(c.id, team.id)}
+                            </td>
+                          ))}
+                          <td className="p-2 text-right font-mono font-black text-amber-400">
+                            {CONTEST_CONFIG.reduce((sum, c) => sum + calculateTotal(c.id, team.id), 0)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ================= TAB 4: REGU ================= */}
+            {activeTab === 'teams' && (
+              <div className="space-y-4 animate-fadeIn">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#0d2218] p-4 rounded-2xl border border-amber-500/40">
+                  <div>
+                    <h3 className="text-base font-black text-amber-300">Daftar Regu & Anggota Peserta LT-1 2026</h3>
+                    <p className="text-xs text-emerald-300/80">SD Negeri Watutulis 2 • Prambon, Sidoarjo[cite: 1]</p>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="🔍 Cari nama anggota..."
+                    value={searchMember}
+                    onChange={(e) => setSearchMember(e.target.value)}
+                    className="w-full sm:w-60 px-3 py-1.5 bg-[#07130e] border border-emerald-700/60 rounded-xl text-xs text-amber-200 placeholder-emerald-600 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {INITIAL_TEAMS.map(team => {
+                    const isMatch = searchMember ? team.members.some(m => m.toLowerCase().includes(searchMember.toLowerCase())) : true;
+                    if (!isMatch) return null;
+                    return (
+                      <div key={team.id} className={`bg-[#091711] border ${team.borderColor} p-4 rounded-2xl space-y-3`}>
+                        <div className="flex justify-between items-center">
+                          <span className="text-2xl">{team.avatar}</span>
+                          <span className="text-[10px] bg-black/40 px-2 py-0.5 rounded text-emerald-400 font-bold">{team.gender === 'PA' ? 'Putra' : 'Putri'}</span>
+                        </div>
+                        <div>
+                          <h4 className="text-base font-black text-white">Regu {team.name}</h4>
+                          <p className="text-xs text-amber-300 font-semibold">Pinru: {team.pinru}</p>
+                        </div>
+                        <div className="border-t border-emerald-900/60 pt-2">
+                          <p className="text-[10px] text-emerald-400 uppercase font-bold mb-1">Anggota ({team.members.length}):</p>
+                          <ul className="text-xs text-emerald-200/80 space-y-0.5">
+                            {team.members.map((m, idx) => (
+                              <li key={idx}>{idx + 1}. {m}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ================= TAB 5: JUKNIS & RUNDOWN ================= */}
+            {activeTab === 'juknis' && (
+              <div className="space-y-4 animate-fadeIn">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {RUNDOWN_SCHEDULE.map(day => (
+                    <div key={day.dayId} className="bg-[#091711] border border-emerald-800 p-4 rounded-2xl space-y-3">
+                      <h4 className="text-sm font-black text-amber-300 border-b border-emerald-800 pb-2">{day.dayTitle}</h4>
+                      <div className="space-y-2">
+                        {day.events.map((ev, idx) => (
+                          <div key={idx} className="p-2.5 bg-[#050e0a] rounded-xl border border-emerald-950 flex items-start gap-2.5">
+                            <span className="text-lg">{ev.icon}</span>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-white">{ev.title}</span>
+                                <span className="text-[10px] font-mono text-amber-400">{ev.start} - {ev.end} WIB</span>
+                              </div>
+                              <p className="text-[11px] text-emerald-300/80 mt-0.5">{ev.desc}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ================= TAB 6: CETAK BERITA ACARA ================= */}
+            {activeTab === 'print' && (
+              <div className="space-y-4 animate-fadeIn">
+                <div className="flex justify-between items-center bg-[#10241b] p-3 rounded-xl border border-amber-500/40">
+                  <span className="text-xs font-bold text-amber-300">Format Berita Acara Siap Cetak</span>
+                  <button onClick={() => window.print()} className="px-4 py-1.5 bg-amber-500 text-black font-black text-xs rounded-xl">
+                    🖨️ Cetak / PDF
+                  </button>
+                </div>
+
+                <div className="bg-white text-black p-6 rounded-2xl max-w-4xl mx-auto space-y-4 text-xs border border-gray-300">
+                  <div className="text-center border-b-2 border-black pb-2">
+                    <p className="font-bold text-[10px] uppercase">GERAKAN PRAMUKA GUGUS DEPAN 10.055 – 10.056[cite: 1]</p>
+                    <h2 className="text-base font-black uppercase">PANGKALAN SD NEGERI WATUTULIS 2[cite: 1]</h2>
+                    <p className="text-[10px] text-gray-600">Kecamatan Prambon, Kabupaten Sidoarjo • Tahun 2026[cite: 1]</p>
+                    <h3 className="font-bold text-xs uppercase underline mt-2">BERITA ACARA REGU BERPRESTASI LT-1 TAHUN 2026[cite: 1]</h3>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-xs uppercase mb-1">A. Hasil Klasemen Penggalang Putra (PA)</h4>
+                    <table className="w-full text-left border border-gray-400 text-[11px]">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="p-1 border border-gray-300">Rank</th>
+                          <th className="p-1 border border-gray-300">Regu</th>
+                          <th className="p-1 border border-gray-300 text-center">Emas</th>
+                          <th className="p-1 border border-gray-300 text-center">Perak</th>
+                          <th className="p-1 border border-gray-300 text-center">Perunggu</th>
+                          <th className="p-1 border border-gray-300 text-right">Skor</th>
+                          <th className="p-1 border border-gray-300">Gelar Prestasi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {overallStandings.PA.map(r => (
+                          <tr key={r.team.id}>
+                            <td className="p-1 border border-gray-300 text-center font-bold">{r.rank}</td>
+                            <td className="p-1 border border-gray-300 font-bold">Regu {r.team.name}</td>
+                            <td className="p-1 border border-gray-300 text-center">{r.gold}</td>
+                            <td className="p-1 border border-gray-300 text-center">{r.silver}</td>
+                            <td className="p-1 border border-gray-300 text-center">{r.bronze}</td>
+                            <td className="p-1 border border-gray-300 text-right font-mono">{r.totalOverallScore}</td>
+                            <td className="p-1 border border-gray-300 font-bold">{r.title}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-xs uppercase mb-1">B. Hasil Klasemen Penggalang Putri (PI)</h4>
+                    <table className="w-full text-left border border-gray-400 text-[11px]">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="p-1 border border-gray-300">Rank</th>
+                          <th className="p-1 border border-gray-300">Regu</th>
+                          <th className="p-1 border border-gray-300 text-center">Emas</th>
+                          <th className="p-1 border border-gray-300 text-center">Perak</th>
+                          <th className="p-1 border border-gray-300 text-center">Perunggu</th>
+                          <th className="p-1 border border-gray-300 text-right">Skor</th>
+                          <th className="p-1 border border-gray-300">Gelar Prestasi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {overallStandings.PI.map(r => (
+                          <tr key={r.team.id}>
+                            <td className="p-1 border border-gray-300 text-center font-bold">{r.rank}</td>
+                            <td className="p-1 border border-gray-300 font-bold">Regu {r.team.name}</td>
+                            <td className="p-1 border border-gray-300 text-center">{r.gold}</td>
+                            <td className="p-1 border border-gray-300 text-center">{r.silver}</td>
+                            <td className="p-1 border border-gray-300 text-center">{r.bronze}</td>
+                            <td className="p-1 border border-gray-300 text-right font-mono">{r.totalOverallScore}</td>
+                            <td className="p-1 border border-gray-300 font-bold">{r.title}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </main>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
